@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微信表情 → Telegram 贴纸包</title>
+<link rel="stylesheet" href="/static/style.css?v=4">
+</head>
+<body>
+
+<header>
+  微信自定义表情 → Telegram 贴纸包 导出工具
+  <div class="sub">半自动：生成 stickers.zip，也可直接全自动上传到你的 Telegram 贴纸包</div>
+</header>
+
+<main>
+
+  <div class="card hist-card" id="histCard" style="display:none">
+    <button id="histOpenBtn">📦 从历史包选择上传</button>
+    <div class="hint" style="margin-top:8px">打开页面即显示：直接复用本工具之前生成过的贴纸包上传，无需扫描/重新生成。</div>
+    <div class="progress" id="histProgress" style="display:none"><div id="histBar"></div></div>
+    <div id="histResult"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-step="1">选择表情所在文件夹</h2>
+    <div class="row">
+      <input type="text" id="folder" placeholder="例如 D:\我的表情\导出文件夹">
+      <label class="file-label" for="dirPicker">选择文件夹…</label>
+      <input type="file" id="dirPicker" webkitdirectory multiple style="display:none">
+      <button id="scanBtn" class="secondary">按路径扫描</button>
+    </div>
+    <div class="scan-error" id="scanError"></div>
+    <div class="hint">
+      支持 png / jpg / gif / webp / bmp（按内容自动识别，扩展名写错也能用）；单个文件上限 20MB。
+      推荐用「选择文件夹…」，也可粘贴完整路径后点「按路径扫描」。
+    </div>
+  </div>
+
+  <div class="card" id="stickerCard" style="display:none">
+    <h2 data-step="2">勾选要导入的表情（<span id="countInfo"></span>）</h2>
+    <div class="row" style="margin-bottom:12px">
+      <input type="text" id="filter" placeholder="按文件名筛选…">
+      <button id="selectAllBtn" class="secondary">全选</button>
+      <button id="selectNoneBtn" class="secondary">全不选</button>
+    </div>
+    <div id="grid"></div>
+  </div>
+
+  <div class="card" id="buildCard" style="display:none">
+    <h2 data-step="3">生成 Telegram 贴纸包</h2>
+    <div class="row">
+      <input type="text" id="packName" placeholder="贴纸包建议名称（英文/数字/下划线），如 my_wechat_pack">
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="buildBtn">开始生成 stickers.zip</button>
+      <span class="sel-count-badge">已选 <b id="selCount">0</b> 个</span>
+    </div>
+    <div class="hint">
+      静态图 → PNG（512px）；动图 GIF → WEBM 视频贴纸（自动使用内嵌 ffmpeg，无需安装）。
+    </div>
+    <div class="progress" id="progress"><div id="progressBar"></div></div>
+    <div id="result">
+      <div class="result-stats" id="resultStats"></div>
+      <div class="row">
+        <button id="dlBtn">下载 stickers.zip</button>
+      </div>
+    </div>
+    <div class="fail-list" id="failList"></div>
+  </div>
+
+  <div class="card" id="uploadCard" style="display:none">
+    <h2 data-step="4">全自动上传到 Telegram（推荐，无需逐个发送）</h2>
+    <div class="env-info" id="envInfo" style="display:none"></div>
+    <div class="row" style="margin-top:10px">
+      <input type="text" id="upTitle" placeholder="贴纸包显示名称（随意）" style="flex:1">
+      <input type="text" id="staticName" placeholder="静态包名前缀，如 wechat_emo（自动加 _by_机器人名）" style="flex:1">
+      <input type="text" id="animName" placeholder="动图包名前缀，如 wechat_emo_anim（自动加 _by_机器人名）" style="flex:1">
+    </div>
+    <div class="hint">
+      选择要上传的包（超过 120 张会自动拆成多个包）：勾选即上传，取消则不创建该包。想要复用之前生成过的包？点下方「从历史包选择上传」。
+    </div>
+    <div id="packSelect"></div>
+    <div class="row" style="margin-top:12px">
+      <button id="upBtn">上传所选包</button>
+    </div>
+    <div class="hint">
+      准备：<b>1)</b> 找 <b>@BotFather</b> 建 bot 拿 token；<b>2)</b> 找 <b>@userinfobot</b> 得到你的数字 ID；<b>3)</b> <b>先给自己 bot 发一条 /start</b>（必做）。
+      token 与用户 ID 已从环境变量（start.bat）读取，无需填写。
+    </div>
+    <div class="progress" id="upProgress"><div id="upBar"></div></div>
+    <div class="result-stats" id="upResult"></div>
+  </div>
+
+  <div class="card" id="guideCard" style="display:none">
+    <h2 data-step="5">备选：手动上传（发给 @Stickers）</h2>
+    <div class="steps">
+      <b>1.</b> 在 Telegram 搜索并打开 <b>@Stickers</b> 机器人，发送 <code>/newpack</code>（静态）或 <code>/newanimated</code>（动图）。<br>
+      <b>2.</b> 按提示发送贴纸包的显示名称（随意），再发送 short_name（必须以 <code>_by_你的机器人名</code> 结尾——没有 bot 的话先找 @BotFather 免费建一个，只是为了注册包名）。<br>
+      <b>3.</b> 解压下载的 zip：<b>static/</b> 里的文件发给静态包，<b>animated/</b> 里的发给动图包（注意：一个包只能全静态或全动图）。<br>
+      <b>4.</b> 逐个文件以【文件 File】方式发送（不要发成图片，否则会被压缩），全部发完后发送 <code>/publish</code>，再发送 short_name 确认即可。<br>
+      <b>5.</b> 也可以先发 <code>/addsticker</code> 向已有贴纸包追加。
+    </div>
+  </div>
+
+</main>
+
+<dialog id="histModal" class="hist-modal">
+  <div class="hm-head">
+    <h3>从历史包上传到 Telegram</h3>
+    <button type="button" class="hm-close" id="histClose">×</button>
+  </div>
+  <div class="row" style="margin-bottom:10px">
+    <label for="histSelect" style="font-size:13px;color:var(--text-muted)">历史包：</label>
+    <select id="histSelect" style="min-width:280px"></select>
+  </div>
+  <div class="row">
+    <input type="text" id="histTitle" placeholder="贴纸包显示名称（随意）" style="flex:1">
+    <input type="text" id="histStaticName" placeholder="静态包名前缀，如 wechat_emo（自动加 _by_机器人名）" style="flex:1">
+    <input type="text" id="histAnimName" placeholder="动图包名前缀，如 wechat_emo_anim（自动加 _by_机器人名）" style="flex:1">
+  </div>
+  <div class="hint">
+    选择要上传的包（超过 120 张会自动拆成多个包）：勾选即上传，取消则不创建该包。
+  </div>
+  <div id="histPackSelect"></div>
+  <div class="row" style="margin-top:14px">
+    <button id="histUpBtn">上传所选包</button>
+  </div>
+</dialog>
+
+<dialog id="viewer"><img id="viewerImg"></dialog>
+
+<div id="overlay">
+  <div class="panel">
+    <h3 id="ovTitle">处理中…</h3>
+    <div class="sub" id="ovSub"></div>
+    <div class="bar"><div id="ovBar"></div></div>
+    <button class="cancel">收起（后台继续）</button>
+  </div>
+</div>
+
+<!-- 收起后的最小化悬浮进度（右上角，点击展开） -->
+<div id="miniProgress" class="mini-progress" style="display:none" title="">
+  <span class="mini-title" id="miniTitle">⏳ 处理中…</span>
+  <span class="mini-track"><span class="mini-fill" id="miniBar"></span></span>
+  <span class="mini-pct" id="miniPct">0%</span>
+</div>
+
+<script src="/static/app.js?v=4"></script>
+</body>
+</html>

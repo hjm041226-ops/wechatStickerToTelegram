@@ -1,0 +1,13 @@
+# 运行产物 / 缓存
+work/
+__pycache__/
+*.pyc
+server.log
+.pytest_cache/
+.workbuddy/
+
+# 本机内嵌 ffmpeg（体积大且超过 GitHub 100MB 单文件限制，勿提交）
+# 需要在本地放 ffmpeg 时，放入 ffmpeg/bin/ 或安装到 PATH / C:\ffmpeg
+ffmpeg/
+# 编辑器/AI 工具的本地工作目录（含个人记忆、plan，勿提交）
+.zcode/

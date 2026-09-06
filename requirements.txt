@@ -1,0 +1,6 @@
+flask>=3.0
+pillow>=10.0
+requests>=2.31
+
+# 开发 / 测试
+pytest>=8.0
